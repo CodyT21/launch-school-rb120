@@ -1,5 +1,6 @@
 =begin
-Recreating the rock, paper, scissors program from RB101 using object oriented programming principles
+Recreating the rock, paper, scissors program from RB101 using object oriented
+programming principles
 
 Problem Description
 Rock, Paper, Scissors is a two-player game where each player chooses
@@ -40,7 +41,7 @@ class Human < Player
       n = gets.chomp
       break unless n.empty?
       puts 'Invalid name, must enter a value.'
-      end
+    end
     self.name = n
   end
 
@@ -86,31 +87,17 @@ class Move
   end
 
   def >(other_move)
-    case
-    when rock?
-      return true if other_move.scissors?
-      return false
-    when paper?
-      return true if other_move.rock?
-      return false
-    when scissors?
-      return true if other_move.paper?
-      return false
-    end
+    return true if rock? && other_move.scissors?
+    return true if scissors? && other_move.paper?
+    return true if paper? && other_move.rock?
+    false
   end
 
   def <(other_move)
-    case
-    when rock?
-      return true if other_move.paper?
-      return false
-    when paper?
-      return true if other_move.scissors?
-      return false
-    when scissors?
-      return true if other_move.rock?
-      return false
-    end
+    return true if rock? && other_move.paper?
+    return true if scissors? && other_move.rock?
+    return true if paper? && other_move.scissors?
+    false
   end
 
   def to_s
@@ -122,11 +109,6 @@ class Rule
   def initialize
     # not sure what the "state" of a rule object should be
   end
-end
-
-# not sure where "compare" goes yet
-def compare(move1, move2)
-
 end
 
 # Game orchestration enginer
@@ -146,10 +128,12 @@ class RPSGame
     puts "Thank's for playing!"
   end
 
-  def display_winner
+  def display_moves
     puts "#{human.name} chose #{human.move}."
     puts "#{computer.name} chose #{computer.move}."
-    
+  end
+
+  def display_winner
     if human.move > computer.move
       puts "#{human.name} won!"
     elsif human.move < computer.move
@@ -168,7 +152,7 @@ class RPSGame
       puts 'Sorry, must be y or n'
     end
 
-    answer == 'y' ? true : false
+    answer.downcase == 'y'
   end
 
   def play
@@ -177,13 +161,13 @@ class RPSGame
     loop do
       human.choose
       computer.choose
+      display_moves
       display_winner
       break unless play_again?
     end
-    
+
     display_goodbye_message
   end
-
 end
 
 RPSGame.new.play
