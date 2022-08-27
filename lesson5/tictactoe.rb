@@ -19,8 +19,37 @@ Player
 =end
 
 class Board
-  def initialize
+  attr_reader :board
 
+  def initialize
+    @board = {
+      1 => Square.new,
+      2 => Square.new,
+      3 => Square.new,
+      4 => Square.new,
+      5 => Square.new,
+      6 => Square.new,
+      7 => Square.new,
+      8 => Square.new,
+      9 => Square.new
+    }
+  end
+
+  def display
+    start_key = 1
+    end_key = 3
+    # output board as string over 5 lines
+    loop do
+      puts board.fetch_values(start_key, end_key - 1, end_key).join(' | ')
+      puts '- + - + -' unless end_key == 9
+      start_key += 3
+      end_key += 3
+      break if end_key > 9
+    end
+  end
+
+  def full?
+    !board.values.any?(' ')
   end
 end
 
@@ -44,7 +73,7 @@ end
 
 class TTTGame
   attr_reader :board
-  
+
   def initialize
     @board = Board.new
   end
@@ -80,10 +109,10 @@ class TTTGame
     loop do
       display_board
       first_player_moves
-      break if someone_won? || board_full?
+      break if someone_won? || board.full?
 
       second_player_moves
-      break if someone_won? || board_full?
+      break if someone_won? || board.full?
     end
     display_result
     display_goodbye_message
