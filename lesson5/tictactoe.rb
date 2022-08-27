@@ -19,6 +19,9 @@ Player
 =end
 
 class Board
+  WINNING_OUTCOMES = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7],
+                    [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
+  
   attr_reader :board
 
   def initialize
@@ -33,6 +36,14 @@ class Board
       8 => Square.new,
       9 => Square.new
     }
+  end
+
+  def [](key)
+    board[key]
+  end
+
+  def []=(key, new_marker)
+    board[key] = new_marker
   end
 
   def display
@@ -51,6 +62,21 @@ class Board
   def full?
     !board.values.any? { |square| square.marker == ' ' }
   end
+
+  def empty_spaces
+    board.select { |_, square| square.marker == ' ' }.keys
+  end
+
+  def find_winner(player, computer)
+    WINNING_OUTCOMES.each do |arr|
+      if arr.all? { |key| board[key].marker == player.mark }
+        return 1
+      elsif arr.all? { |key| board[key].marker == computer.mark }
+        return 2
+      end
+    end
+    0
+  end
 end
 
 class Square
@@ -66,25 +92,36 @@ class Square
 end
 
 class Player
-  def initialize
+  attr_reader :mark
+
+  def initialize(mark)
+    @mark = mark
   end
 
-  def mark
-
+  def mark_board(choice, board)
+    board[choice].marker = mark
   end
 
-  def play
-
+  def play(board)
+    choice = nil
+    loop do
+      puts "Enter next move (available squares are #{board.empty_spaces}: "
+      choice = gets.chomp.to_i
+      puts board.board[choice]
+      break if board.board[choice].marker == ' '
+      puts "Invalid move. Only choose from the available squares."
+    end
+    mark_board(choice, board)
   end
 end
 
 class TTTGame
-  attr_reader :board
+  attr_reader :board, :player, :computer
 
   def initialize
     @board = Board.new
-    @player = Player.new
-    @computer = Player.new
+    @player = Player.new('X')
+    @computer = Player.new('O')
   end
 
   def display_welcome_message
@@ -100,9 +137,10 @@ class TTTGame
     puts "Final result:"
     board.display
 
-    if player_wins?(player, computer)
+    game_status = board.find_winner(player, computer)
+    if game_status == 1
       puts "You won!"
-    elsif board.full? && !someone_won?
+    elsif board.full? && game_status == 0
       puts "It's a tie."
     else
       puts "Sorry, you lost."
@@ -114,6 +152,15 @@ class TTTGame
   end
 
   def first_player_moves
+    player.play(board)
+  end
+
+  def second_player_moves
+    computer.play(board)
+  end
+
+  def someone_won?
+    board.find_winner(player, computer) > 0
   end
 
   def play
