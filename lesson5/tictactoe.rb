@@ -43,7 +43,7 @@ class Board
   end
 
   def []=(key, new_marker)
-    board[key] = new_marker
+    board[key].marker = new_marker
   end
 
   def display
@@ -101,16 +101,24 @@ class Player
   def mark_board(choice, board)
     board[choice].marker = mark
   end
+end
 
+class Human < Player
   def play(board)
     choice = nil
     loop do
       puts "Enter next move (available squares are #{board.empty_spaces}: "
       choice = gets.chomp.to_i
-      puts board.board[choice]
       break if board.board[choice].marker == ' '
       puts "Invalid move. Only choose from the available squares."
     end
+    mark_board(choice, board)
+  end
+end
+
+class Computer < Player
+  def play(board)
+    choice = board.empty_spaces.sample
     mark_board(choice, board)
   end
 end
@@ -120,8 +128,8 @@ class TTTGame
 
   def initialize
     @board = Board.new
-    @player = Player.new('X')
-    @computer = Player.new('O')
+    @player = Human.new('X')
+    @computer = Computer.new('O')
   end
 
   def display_welcome_message
@@ -170,6 +178,7 @@ class TTTGame
       first_player_moves
       break if someone_won? || board.full?
 
+      display_board
       second_player_moves
       break if someone_won? || board.full?
     end
