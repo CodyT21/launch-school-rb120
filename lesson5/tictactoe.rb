@@ -49,12 +49,19 @@ class Board
   end
 
   def full?
-    !board.values.any?(' ')
+    !board.values.any? { |square| square.marker == ' ' }
   end
 end
 
 class Square
+  attr_accessor :marker
+  
   def initialize
+    @marker = ' '
+  end
+
+  def to_s
+    marker
   end
 end
 
@@ -76,6 +83,8 @@ class TTTGame
 
   def initialize
     @board = Board.new
+    @player = Player.new
+    @computer = Player.new
   end
 
   def display_welcome_message
@@ -102,6 +111,9 @@ class TTTGame
 
   def display_goodbye_message
     puts "Thank for you playing!"
+  end
+
+  def first_player_moves
   end
 
   def play
