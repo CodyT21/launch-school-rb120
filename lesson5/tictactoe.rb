@@ -109,7 +109,7 @@ class Human < Player
     loop do
       puts "Enter next move (available squares are #{board.empty_spaces}: "
       choice = gets.chomp.to_i
-      break if board.board[choice].marker == ' '
+      break if board.empty_spaces.include?(choice)
       puts "Invalid move. Only choose from the available squares."
     end
     mark_board(choice, board)
