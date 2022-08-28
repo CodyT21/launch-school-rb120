@@ -3,8 +3,8 @@ Tic Tac Toe game programmed using object oriented
 programming principles.
 
 # Description
-Tic Tac Toe is a 2-player board game played on a 3x3 grid. 
-Players take turns marking a square. The first player to 
+Tic Tac Toe is a 2-player board game played on a 3x3 grid.
+Players take turns marking a square. The first player to
 mark 3 squares in a row wins.
 
 Nouns: board, player, square, grid
@@ -20,8 +20,7 @@ Player
 
 class Board
   WINNING_OUTCOMES = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7],
-                    [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
-  
+                      [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
   attr_reader :board
 
   def initialize
@@ -69,11 +68,8 @@ class Board
 
   def find_winner(player, computer)
     WINNING_OUTCOMES.each do |arr|
-      if arr.all? { |key| board[key].marker == player.mark }
-        return 1
-      elsif arr.all? { |key| board[key].marker == computer.mark }
-        return 2
-      end
+      return 1 if arr.all? { |key| board[key].marker == player.mark }
+      return 2 if arr.all? { |key| board[key].marker == computer.mark }
     end
     0
   end
@@ -81,7 +77,7 @@ end
 
 class Square
   attr_accessor :marker
-  
+
   def initialize
     @marker = ' '
   end
