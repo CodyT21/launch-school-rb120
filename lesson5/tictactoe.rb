@@ -57,12 +57,12 @@ class Board
     squares.select { |_, square| square.marker == ' ' }.keys
   end
 
-  def find_winner(player, computer)
+  def find_winning_marker(player, computer)
     WINNING_OUTCOMES.each do |arr|
-      return 1 if arr.all? { |key| squares[key].marker == player.mark }
-      return 2 if arr.all? { |key| squares[key].marker == computer.mark }
+      return player.mark if arr.all? { |key| squares[key].marker == player.mark }
+      return computer.mark if arr.all? { |key| squares[key].marker == computer.mark }
     end
-    0
+    nil
   end
 
   def reset
@@ -141,13 +141,12 @@ class TTTGame
     puts "Final result:"
     board.display
 
-    game_status = board.find_winner(player, computer)
-    if game_status == 1
-      puts "You won!"
-    elsif board.full? && game_status == 0
+    winning_marker = board.find_winning_marker(player, computer)
+    if winning_marker
+      puts "You won!" if winning_marker == HUMAN_MARKER
+      puts "Sorry, you lost." if winning_marker == COMPUTER_MARKER
+    else 
       puts "It's a tie."
-    else
-      puts "Sorry, you lost."
     end
   end
 
@@ -164,7 +163,7 @@ class TTTGame
   end
 
   def someone_won?
-    board.find_winner(player, computer) > 0
+    !!board.find_winning_marker(player, computer)
   end
 
   def play_again?
@@ -179,9 +178,13 @@ class TTTGame
     answer == 'y'
   end
 
-  def play
-    display_welcome_message
+  def clear
     system 'clear'
+  end
+
+  def play
+    clear
+    display_welcome_message
 
     loop do
       loop do
@@ -195,8 +198,8 @@ class TTTGame
       display_result
       
       break unless play_again?
+      clear
       puts "Let's play again!"
-      system 'clear'
       board.reset
       display_board
     end
