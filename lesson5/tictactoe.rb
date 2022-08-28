@@ -64,13 +64,19 @@ class Board
     end
     0
   end
+
+  def reset
+    (1..9).each { |key| @squares[key] = Square.new }
+  end
 end
 
 class Square
+  INITIAL_MARKER = ' '
+
   attr_accessor :marker
 
-  def initialize
-    @marker = ' '
+  def initialize(mark=INITIAL_MARKER)
+    @marker = mark
   end
 
   def to_s
@@ -94,7 +100,7 @@ class Human < Player
   def play(board)
     choice = nil
     loop do
-      puts "Enter next move (available squares are #{board.empty_spaces}: "
+      puts "Enter next move (available squares are #{board.empty_spaces.join(', ')}): "
       choice = gets.chomp.to_i
       break if board.empty_spaces.include?(choice)
       puts "Invalid move. Only choose from the available squares."
@@ -111,12 +117,15 @@ class Computer < Player
 end
 
 class TTTGame
+  HUMAN_MARKER = 'X'
+  COMPUTER_MARKER = 'O'
+
   attr_reader :board, :player, :computer
 
   def initialize
     @board = Board.new
-    @player = Human.new('X')
-    @computer = Computer.new('O')
+    @player = Human.new(HUMAN_MARKER)
+    @computer = Computer.new(COMPUTER_MARKER)
   end
 
   def display_welcome_message
@@ -158,18 +167,40 @@ class TTTGame
     board.find_winner(player, computer) > 0
   end
 
+  def play_again?
+    answer = nil
+    loop do
+      puts "Would you like to play again? (y/n)"
+      answer = gets.chomp.downcase
+      break if %w(y n).include?(answer)
+      puts "Invalid entry. Only input y or n."
+    end
+
+    answer == 'y'
+  end
+
   def play
     display_welcome_message
-    loop do
-      display_board
-      first_player_moves
-      break if someone_won? || board.full?
+    system 'clear'
 
+    loop do
+      loop do
+        first_player_moves
+        break if someone_won? || board.full?
+
+        second_player_moves
+        break if someone_won? || board.full?
+        display_board
+      end
+      display_result
+      
+      break unless play_again?
+      puts "Let's play again!"
+      system 'clear'
+      board.reset
       display_board
-      second_player_moves
-      break if someone_won? || board.full?
     end
-    display_result
+    
     display_goodbye_message
   end
 end
