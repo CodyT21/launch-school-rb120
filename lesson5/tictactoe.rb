@@ -50,11 +50,11 @@ class Board
   end
 
   def full?
-    !squares.values.any? { |square| square.marker == ' ' }
+    !squares.values.any? { |square| !square.marked? }
   end
 
   def empty_spaces
-    squares.select { |_, square| square.marker == ' ' }.keys
+    squares.select { |_, square| !square.marked? }.keys
   end
 
   def find_winning_marker(player, computer)
@@ -77,6 +77,10 @@ class Square
 
   def initialize(mark=INITIAL_MARKER)
     @marker = mark
+  end
+
+  def marked?
+    marker != INITIAL_MARKER
   end
 
   def to_s
@@ -121,11 +125,13 @@ class TTTGame
   COMPUTER_MARKER = 'O'
 
   attr_reader :board, :player, :computer
+  attr_accessor :current_player
 
   def initialize
     @board = Board.new
     @player = Human.new(HUMAN_MARKER)
     @computer = Computer.new(COMPUTER_MARKER)
+    @current_player = nil
   end
 
   def display_welcome_message
@@ -154,12 +160,8 @@ class TTTGame
     puts "Thank for you playing!"
   end
 
-  def first_player_moves
-    player.play(board)
-  end
-
-  def second_player_moves
-    computer.play(board)
+  def current_player_moves
+    current_player.play(board)
   end
 
   def someone_won?
@@ -186,7 +188,10 @@ class TTTGame
     clear
     puts "Let's play again!"
     board.reset
-    display_board
+  end
+
+  def human_player?
+    current_player.class == player.class
   end
 
   def play
@@ -194,13 +199,12 @@ class TTTGame
     display_welcome_message
 
     loop do
+      self.current_player = player
       loop do
-        first_player_moves
+        display_board if human_player?
+        current_player_moves
         break if someone_won? || board.full?
-
-        second_player_moves
-        break if someone_won? || board.full?
-        display_board
+        self.current_player = current_player == player ? computer : player
       end
       display_result
       
