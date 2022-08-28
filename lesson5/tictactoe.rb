@@ -134,6 +134,29 @@ class TTTGame
     @current_player = nil
   end
 
+  def play
+    clear
+    display_welcome_message
+
+    loop do
+      self.current_player = player
+      loop do
+        display_board if human_player?
+        current_player_moves
+        break if someone_won? || board.full?
+        self.current_player = current_player == player ? computer : player
+      end
+      display_result
+      
+      break unless play_again?
+      reset
+    end
+    
+    display_goodbye_message
+  end
+
+  private
+  
   def display_welcome_message
     puts "Welcome to the Tic Tac Toe game!"
   end
@@ -192,27 +215,6 @@ class TTTGame
 
   def human_player?
     current_player.class == player.class
-  end
-
-  def play
-    clear
-    display_welcome_message
-
-    loop do
-      self.current_player = player
-      loop do
-        display_board if human_player?
-        current_player_moves
-        break if someone_won? || board.full?
-        self.current_player = current_player == player ? computer : player
-      end
-      display_result
-      
-      break unless play_again?
-      reset
-    end
-    
-    display_goodbye_message
   end
 end
 
