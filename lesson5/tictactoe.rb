@@ -21,28 +21,19 @@ Player
 class Board
   WINNING_OUTCOMES = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7],
                       [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
-  attr_reader :board
+  attr_reader :squares
 
   def initialize
-    @board = {
-      1 => Square.new,
-      2 => Square.new,
-      3 => Square.new,
-      4 => Square.new,
-      5 => Square.new,
-      6 => Square.new,
-      7 => Square.new,
-      8 => Square.new,
-      9 => Square.new
-    }
+    @squares = {}
+    (1..9).each { |key| @squares[key] = Square.new }
   end
 
   def [](key)
-    board[key]
+    squares[key]
   end
 
   def []=(key, new_marker)
-    board[key].marker = new_marker
+    squares[key].marker = new_marker
   end
 
   def display
@@ -50,7 +41,7 @@ class Board
     end_key = 3
     # output board as string over 5 lines
     loop do
-      puts board.fetch_values(start_key, end_key - 1, end_key).join(' | ')
+      puts squares.fetch_values(start_key, end_key - 1, end_key).join(' | ')
       puts '- + - + -' unless end_key == 9
       start_key += 3
       end_key += 3
@@ -59,17 +50,17 @@ class Board
   end
 
   def full?
-    !board.values.any? { |square| square.marker == ' ' }
+    !squares.values.any? { |square| square.marker == ' ' }
   end
 
   def empty_spaces
-    board.select { |_, square| square.marker == ' ' }.keys
+    squares.select { |_, square| square.marker == ' ' }.keys
   end
 
   def find_winner(player, computer)
     WINNING_OUTCOMES.each do |arr|
-      return 1 if arr.all? { |key| board[key].marker == player.mark }
-      return 2 if arr.all? { |key| board[key].marker == computer.mark }
+      return 1 if arr.all? { |key| squares[key].marker == player.mark }
+      return 2 if arr.all? { |key| squares[key].marker == computer.mark }
     end
     0
   end
