@@ -90,9 +90,10 @@ end
 
 class Player
   attr_reader :mark
-  attr_accessor :score
+  attr_accessor :score, :name
 
   def initialize(mark, score=0)
+    set_name
     @mark = mark
     @score = score
   end
@@ -112,6 +113,17 @@ class Human < Player
       puts "Invalid move. Only choose from the available squares."
     end
     mark_board(choice, board)
+  end
+
+  def set_name
+    n = ''
+    loop do
+      puts 'Enter your name: '
+      n = gets.chomp
+      break unless n.empty?
+      puts 'Invalid name, must enter a value.'
+    end
+    self.name = n
   end
 
   private
@@ -143,6 +155,10 @@ class Computer < Player
   def play(board)
     square = get_square(board)
     mark_board(square, board)
+  end
+
+  def set_name
+    self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
   end
 
   private
@@ -186,8 +202,6 @@ class Computer < Player
 end
 
 class TTTGame
-  HUMAN_MARKER = 'X'
-  COMPUTER_MARKER = 'O'
   WINNING_SCORE = 5
 
   attr_reader :board, :player, :computer
@@ -195,8 +209,8 @@ class TTTGame
 
   def initialize
     @board = Board.new
-    @player = Human.new(HUMAN_MARKER)
-    @computer = Computer.new(COMPUTER_MARKER)
+    @player = Human.new(choose_marker)
+    @computer = Computer.new(player.mark == 'X' ? 'O' : 'X')
     @current_player = nil
   end
 
@@ -242,8 +256,8 @@ class TTTGame
 
     winning_marker = board.find_winning_marker(player, computer)
     if winning_marker
-      puts "You won!" if winning_marker == HUMAN_MARKER
-      puts "Sorry, you lost." if winning_marker == COMPUTER_MARKER
+      puts "You won!" if winning_marker == player.mark
+      puts "Sorry, you lost." if winning_marker == computer.mark
     else
       puts "It's a tie."
     end
@@ -289,7 +303,7 @@ class TTTGame
 
   def update_score
     winning_marker = board.find_winning_marker(player, computer)
-    winning_marker == HUMAN_MARKER ? player.score += 1 : computer.score += 1
+    winning_marker == player.mark ? player.score += 1 : computer.score += 1
   end
 
   def display_score(final_score: false)
@@ -298,8 +312,19 @@ class TTTGame
     else
       puts "Current Scores"
     end
-    puts "Player: #{player.score}"
-    puts "Computer: #{computer.score}"
+    puts "#{player.name}: #{player.score}"
+    puts "#{computer.name}: #{computer.score}"
+  end
+
+  def choose_marker
+    marker_choice = nil
+    loop do
+      puts "Which marker would you like to be: 'X' or 'O'"
+      marker_choice = gets.chomp.upcase!
+      break if %w(X O).include?(marker_choice)
+      puts "Invalid entry. Only input X or O."
+    end
+    marker_choice
   end
 end
 
