@@ -90,9 +90,11 @@ end
 
 class Player
   attr_reader :mark
+  attr_accessor :score
 
-  def initialize(mark)
+  def initialize(mark, score=0)
     @mark = mark
+    @score = score
   end
 
   def mark_board(choice, board)
@@ -104,25 +106,83 @@ class Human < Player
   def play(board)
     choice = nil
     loop do
-      puts "Enter next move (available squares are #{board.empty_spaces.join(', ')}): "
+      puts "Enter next move (available squares are #{joinor(board.empty_spaces)}): "
       choice = gets.chomp.to_i
       break if board.empty_spaces.include?(choice)
       puts "Invalid move. Only choose from the available squares."
     end
     mark_board(choice, board)
   end
+
+  private
+
+  def joinor(nums, separator=', ', last_separator='or')
+    case nums.length
+    when 0 then ''
+    when 1 then nums.first.to_s
+    when 2 then nums.join(" #{last_separator} ")
+    else
+      str = ''
+      nums.each_with_index do |num, index|
+        if index < nums.length - 1
+          str += num.to_s + separator
+        else
+          str += "#{last_separator} #{num}"
+        end
+      end
+      str
+    end
+  end
 end
 
 class Computer < Player
   def play(board)
-    choice = board.empty_spaces.sample
-    mark_board(choice, board)
+    square = get_square(board)
+    mark_board(square, board)
+  end
+
+  private
+
+  def find_at_risk_spaces(line, board, marker=mark)
+    if board.squares.values_at(*line).count(marker) == 2
+      board.select { |key, square| line.include?(key) && square.marker == ' ' }.keys.first
+    end
+  end
+
+  def offensive_move(board)
+    Board::WINNING_OUTCOMES.each do |arr|
+      square = find_at_risk_spaces(arr, board, mark)
+      return square if square
+    end
+    nil
+  end
+
+  def defensive_move(board)
+    Board::WINNING_OUTCOMES.each do |arr|
+      square = find_at_risk_spaces(arr, board, mark)
+      return square if square
+    end
+    nil
+  end
+
+  def get_square(board)
+    square = offensive_move(board)
+    square = defensive_move(board) if !square
+    if !square
+      if board.empty_spaces.include?(5)
+        square = 5
+      else
+        square = board.empty_spaces.sample
+      end
+    end
+    square
   end
 end
 
 class TTTGame
   HUMAN_MARKER = 'X'
   COMPUTER_MARKER = 'O'
+  WINNING_SCORE = 5
 
   attr_reader :board, :player, :computer
   attr_accessor :current_player
@@ -138,7 +198,9 @@ class TTTGame
     clear
     display_welcome_message
 
-    loop do
+    # loop do
+    until player.score == WINNING_SCORE || computer.score == WINNING_SCORE
+      display_score
       self.current_player = player
       loop do
         display_board if human_player?
@@ -146,12 +208,14 @@ class TTTGame
         break if someone_won? || board.full?
         self.current_player = current_player == player ? computer : player
       end
+      update_score
       display_result
       
-      break unless play_again?
+      # break unless play_again?
       reset
     end
     
+    display_score(final_score: true)
     display_goodbye_message
   end
 
@@ -215,6 +279,21 @@ class TTTGame
 
   def human_player?
     current_player.class == player.class
+  end
+
+  def update_score
+    winning_marker = board.find_winning_marker(player, computer)
+    winning_marker == HUMAN_MARKER ? player.score += 1 : computer.score += 1
+  end
+
+  def display_score(final_score: false)
+    if final_score
+      puts "Final Scores"
+    else
+      puts "Current Scores"
+    end 
+    puts "Player: #{player.score}"
+    puts "Computer: #{computer.score}"
   end
 end
 
