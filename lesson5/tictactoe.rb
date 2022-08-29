@@ -57,10 +57,10 @@ class Board
     squares.select { |_, square| !square.marked? }.keys
   end
 
-  def find_winning_marker(player, computer)
+  def find_winning_marker(player, comp)
     WINNING_OUTCOMES.each do |arr|
-      return player.mark if arr.all? { |key| squares[key].marker == player.mark }
-      return computer.mark if arr.all? { |key| squares[key].marker == computer.mark }
+      return player.mark if arr.all? { |k| squares[k].marker == player.mark }
+      return comp.mark if arr.all? { |k| squares[k].marker == comp.mark }
     end
     nil
   end
@@ -106,7 +106,7 @@ class Human < Player
   def play(board)
     choice = nil
     loop do
-      puts "Enter next move (available squares are #{joinor(board.empty_spaces)}): "
+      puts "Choose a position to place a mark: #{joinor(board.empty_spaces)}"
       choice = gets.chomp.to_i
       break if board.empty_spaces.include?(choice)
       puts "Invalid move. Only choose from the available squares."
@@ -122,16 +122,20 @@ class Human < Player
     when 1 then nums.first.to_s
     when 2 then nums.join(" #{last_separator} ")
     else
-      str = ''
-      nums.each_with_index do |num, index|
-        if index < nums.length - 1
-          str += num.to_s + separator
-        else
-          str += "#{last_separator} #{num}"
-        end
-      end
-      str
+      join_str(nums, separator, last_separator)
     end
+  end
+
+  def join_str(nums, separator, last_separator)
+    str = ''
+    nums.each_with_index do |num, index|
+      str += if index < nums.length - 1
+               num.to_s + separator
+             else
+               "#{last_separator} #{num}"
+             end
+    end
+    str
   end
 end
 
@@ -143,15 +147,17 @@ class Computer < Player
 
   private
 
-  def find_at_risk_spaces(line, board, marker=mark)
-    if board.squares.values_at(*line).count(marker) == 2
-      board.select { |key, square| line.include?(key) && square.marker == ' ' }.keys.first
+  def find_at_risk_squares(line, board, marker=mark)
+    return unless board.squares.values_at(*line).count(marker) == 2
+    at_risk_squares = board.select do |key, square|
+      line.include?(key) && square.marker == ' '
     end
+    at_risk_squares.keys.first
   end
 
   def offensive_move(board)
     Board::WINNING_OUTCOMES.each do |arr|
-      square = find_at_risk_spaces(arr, board, mark)
+      square = find_at_risk_squares(arr, board, mark)
       return square if square
     end
     nil
@@ -159,7 +165,7 @@ class Computer < Player
 
   def defensive_move(board)
     Board::WINNING_OUTCOMES.each do |arr|
-      square = find_at_risk_spaces(arr, board, mark)
+      square = find_at_risk_squares(arr, board, mark)
       return square if square
     end
     nil
@@ -169,11 +175,11 @@ class Computer < Player
     square = offensive_move(board)
     square = defensive_move(board) if !square
     if !square
-      if board.empty_spaces.include?(5)
-        square = 5
-      else
-        square = board.empty_spaces.sample
-      end
+      square = if board.empty_spaces.include?(5)
+                 5
+               else
+                 board.empty_spaces.sample
+               end
     end
     square
   end
@@ -198,29 +204,29 @@ class TTTGame
     clear
     display_welcome_message
 
-    # loop do
     until player.score == WINNING_SCORE || computer.score == WINNING_SCORE
-      display_score
       self.current_player = player
-      loop do
-        display_board if human_player?
-        current_player_moves
-        break if someone_won? || board.full?
-        self.current_player = current_player == player ? computer : player
-      end
-      update_score
-      display_result
-      
-      # break unless play_again?
-      reset
+      main_game
     end
-    
     display_score(final_score: true)
     display_goodbye_message
   end
 
   private
-  
+
+  def main_game
+    display_score
+    loop do
+      display_board if human_player?
+      current_player_moves
+      break if someone_won? || board.full?
+      self.current_player = current_player == player ? computer : player
+    end
+    update_score
+    display_result
+    reset
+  end
+
   def display_welcome_message
     puts "Welcome to the Tic Tac Toe game!"
   end
@@ -238,7 +244,7 @@ class TTTGame
     if winning_marker
       puts "You won!" if winning_marker == HUMAN_MARKER
       puts "Sorry, you lost." if winning_marker == COMPUTER_MARKER
-    else 
+    else
       puts "It's a tie."
     end
   end
@@ -291,7 +297,7 @@ class TTTGame
       puts "Final Scores"
     else
       puts "Current Scores"
-    end 
+    end
     puts "Player: #{player.score}"
     puts "Computer: #{computer.score}"
   end
