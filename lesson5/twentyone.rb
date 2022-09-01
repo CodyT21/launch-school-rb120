@@ -110,6 +110,7 @@ class Player < Participant
     joinand(hand)
   end
 
+  # could move some logic from Game class here
   def stay
   end
 
@@ -127,6 +128,7 @@ end
 class Deck
   attr_accessor :cards
 
+  # change to using Card class to represent each individual card
   def initialize
     @cards = {
       hearts: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
@@ -160,6 +162,7 @@ class Deck
   end
 end
 
+# implement in the future
 class Card
   def initialize
   end
