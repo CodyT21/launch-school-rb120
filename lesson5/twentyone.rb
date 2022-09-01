@@ -44,6 +44,12 @@ class Participant
     @hand = []
   end
 
+  def hit(deck)
+    card = deck.deal
+    puts "Next card is: #{card}"
+    hand << card
+  end
+
   def busted?
     total > 21
   end
@@ -99,9 +105,6 @@ class Player < Participant
   def show_hand
     joinand(hand)
   end
-  
-  def hit
-  end
 
   def stay
   end
@@ -110,9 +113,6 @@ end
 class Dealer < Participant
   def show_hand
     joinand(hand[1..-1]) + " and one unknown card."
-  end
-
-  def hit
   end
 
   def stay
@@ -173,17 +173,41 @@ class Game
   end
 
   def player_turn
-    player.play
+    play = nil
+    until play == 'stay' || player.busted?
+      loop do
+        puts "Total: #{player.total}"
+        puts "Would you like to hit or stay?"
+        play = gets.chomp.downcase
+        break if %w(hit stay).include?(play)
+        puts "Invalid entry. Only input hit or stay."
+      end
+      player.hit(deck) if play == 'hit'
+    end
+    puts "Player stays." unless player.busted?
   end
 
   def dealer_turn
-    dealer.play
+    until dealer.total > 15 || player.busted?
+      puts "Dealer hits..."
+      dealer.hit(deck)
+    end
+    puts "Dealer stays." unless dealer.busted?
   end
 
-  def show_results
-    puts "Final Scores"
-    puts "Player total: #{player.total}"
-    puts "Dealer total: #{dealer.total}"
+  def show_result
+    if player.busted?
+      puts "Sorry, you busted. Dealer wins."
+    elsif dealer.busted?
+      puts "Dealer busted. You won!"
+    else
+      puts "Hand Totals"
+      puts "Player Total: #{player.total}"
+      puts "Dealer Total: #{dealer.total}"
+      puts "You won!" if player.total > dealer.total
+      puts "Sorry, you lost this round." if dealer.total > player.total
+      puts "It's a tie." if player.total == dealer.total
+    end
   end
 
   def start
