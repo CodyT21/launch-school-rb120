@@ -81,6 +81,10 @@ class Participant
     end
   end
 
+  def reset
+    self.hand = []
+  end
+
   # probably should move this method out of class
   def joinand(elems, separator=', ', last_separator='and')
     case elems.length
@@ -108,6 +112,7 @@ class Player < Participant
 
   def stay
   end
+
 end
 
 class Dealer < Participant
@@ -143,6 +148,15 @@ class Deck
     card_index = cards[suit].index(card)
     cards[suit].delete_at(card_index)
     "#{card} of #{suit.to_s.capitalize}"
+  end
+
+  def reset
+    self.cards = {
+      hearts: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
+      diamonds: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
+      clubs: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
+      spades: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace)
+    }
   end
 end
 
@@ -210,12 +224,41 @@ class Game
     end
   end
 
+  def play_again?
+    answer = nil
+    loop do
+      puts "Would you like to play again? (y/n)"
+      answer = gets.chomp.downcase
+      break if %w(y n).include?(answer)
+      puts "Invalid entry. Only input y or n."
+    end
+
+    answer == 'y'
+  end
+
+  def clear
+    system 'clear'
+  end
+
+  def reset
+    clear
+    puts "Let's play again!"
+    deck.reset
+    player.reset
+    dealer.reset
+  end
+
   def start
-    deal_cards
-    show_initial_cards
-    player_turn
-    dealer_turn
-    show_result
+    loop do
+      clear
+      deal_cards
+      show_initial_cards
+      player_turn
+      dealer_turn
+      show_result
+      break unless play_again?
+      reset
+    end
   end
 end
 
