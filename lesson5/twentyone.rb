@@ -75,6 +75,7 @@ class Participant
     card = deck.deal
     puts "Next card is: #{card}"
     hand << card
+    puts "#{self.class} has: #{show_hand}"
   end
 
   def busted?
@@ -139,10 +140,10 @@ class Deck
 
   # change to using Card class to represent each individual card
   def initialize
-    @cards = get_cards
+    @cards = set_cards
   end
 
-  def get_cards
+  def set_cards
     card_set = Hash.new { |h, k| h[k] = [] }
     SUITS.each do |suit|
       VALUES.each do |value|
@@ -161,13 +162,13 @@ class Deck
       end
     end
     card = cards[suit].sample
-    card_index = cards[suit].index(card)
-    cards[suit].delete_at(card_index)
+    # card_index = cards[suit].index(card)
+    cards[suit].delete(card)
     card
   end
 
   def reset
-    self.cards = get_cards
+    self.cards = set_cards
   end
 end
 
@@ -202,6 +203,21 @@ class Game
     @dealer = Dealer.new
   end
 
+  def start
+    loop do
+      clear
+      deal_cards
+      show_initial_cards
+      player_turn
+      dealer_turn
+      show_result
+      break unless play_again?
+      reset
+    end
+  end
+
+  private
+
   def deal_cards
     2.times do
       player.hand << deck.deal
@@ -211,21 +227,42 @@ class Game
 
   def show_initial_cards
     puts "Player has: #{player.show_hand}"
-    puts "Dealer has: #{dealer.show_hand}" 
+    puts "Dealer has: #{dealer.show_hand}"
+  end
+
+  def show_final_hands
+    puts "Final hands"
+    puts "Player had: #{player.show_hand}"
+    puts "Dealer had: #{dealer.show_hand(true)}"
+  end
+
+  def show_final_hand_totals
+    puts "Hand Totals"
+    puts "Player Total: #{player.total}"
+    puts "Dealer Total: #{dealer.total}"
+  end
+
+  def show_winner
+    puts "You won!" if player.total > dealer.total
+    puts "Sorry, you lost this round." if dealer.total > player.total
+    puts "It's a tie." if player.total == dealer.total
+  end
+
+  def validate_player_move
+    loop do
+      puts "Total: #{player.total}"
+      puts "Would you like to hit or stay?"
+      play = gets.chomp.downcase
+      return play if %w(hit stay).include?(play)
+      puts "Invalid entry. Only input hit or stay."
+    end
   end
 
   def player_turn
     play = nil
     until play == 'stay' || player.busted?
-      loop do
-        puts "Total: #{player.total}"
-        puts "Would you like to hit or stay?"
-        play = gets.chomp.downcase
-        break if %w(hit stay).include?(play)
-        puts "Invalid entry. Only input hit or stay."
-      end
+      play = validate_player_move
       player.hit(deck) if play == 'hit'
-      puts "Player has: #{player.show_hand}"
     end
     puts "Player stays." unless player.busted?
   end
@@ -234,27 +271,19 @@ class Game
     until dealer.total > 15 || player.busted?
       puts "Dealer hits..."
       dealer.hit(deck)
-      puts "Dealer has: #{dealer.show_hand}"
     end
     puts "Dealer stays." unless dealer.busted?
   end
 
   def show_result
-    puts "Final hands"
-    puts "Player had: #{player.show_hand}"
-    puts "Dealer had: #{dealer.show_hand(final_hand=true)}" 
-
+    show_final_hands
     if player.busted?
       puts "Sorry, you busted. Dealer wins."
     elsif dealer.busted?
       puts "Dealer busted. You won!"
     else
-      puts "Hand Totals"
-      puts "Player Total: #{player.total}"
-      puts "Dealer Total: #{dealer.total}"
-      puts "You won!" if player.total > dealer.total
-      puts "Sorry, you lost this round." if dealer.total > player.total
-      puts "It's a tie." if player.total == dealer.total
+      show_final_hand_totals
+      show_winner
     end
   end
 
@@ -280,19 +309,6 @@ class Game
     deck.reset
     player.reset
     dealer.reset
-  end
-
-  def start
-    loop do
-      clear
-      deal_cards
-      show_initial_cards
-      player_turn
-      dealer_turn
-      show_result
-      break unless play_again?
-      reset
-    end
   end
 end
 
