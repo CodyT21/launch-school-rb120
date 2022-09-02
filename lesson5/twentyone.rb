@@ -37,7 +37,34 @@ Game
 
 =end
 
+require 'pry-byebug'
+
+module Joinable
+  def joinand(elems, separator=', ', last_separator='and')
+    case elems.length
+    when 0 then ''
+    when 1 then elems.first.to_s
+    when 2 then elems.join(" #{last_separator} ")
+    else
+      join_multi_ele_list(elems, separator, last_separator)
+    end
+  end
+
+  def join_multi_ele_list(elems, separator=', ', last_separator='and')
+    str = ''
+    elems.each_with_index do |num, index|
+      str << if index < elems.length - 1
+               num.to_s + separator
+             else
+               "#{last_separator} #{num}"
+             end
+    end
+    str
+  end
+end
+
 class Participant
+  include Joinable
   attr_accessor :hand
 
   def initialize
@@ -56,27 +83,21 @@ class Participant
 
   def total
     hand_values = []
-    aces = hand.select { |card| card.include?('Ace') }
-    non_ace_cards = hand.select { |card| !card.include?('Ace') }
+    aces = hand.select { |card| card.value == 'Ace' }
+    non_ace_cards = hand.select { |card| card.value != 'Ace' }
     non_ace_cards.each do |card|
-      card_value = card.split[0]
-      hand_values << if card_value.match(/(Jack|Queen|King)/)
-                       10
-                     else
-                       card.to_i
-                     end
+      hand_values << card.convert_to_integer
     end
-    
     calculate_ace_values!(aces, hand_values)
     hand_values.sum
   end
-  
-  def calculate_ace_values!(aces, card_values)
+
+  def calculate_ace_values!(aces, hand_values)
     aces.each do
-      card_values << if aces.length == 1
-                       card_values.sum < 11 ? 11 : 1
+      hand_values << if aces.length == 1
+                       hand_values.sum < 11 ? 11 : 1
                      else
-                       card_values.sum < 11 - aces.length ? 11 : 1
+                       hand_values.sum < 11 - aces.length ? 11 : 1
                      end
     end
   end
@@ -84,58 +105,51 @@ class Participant
   def reset
     self.hand = []
   end
-
-  # probably should move this method out of class
-  def joinand(elems, separator=', ', last_separator='and')
-    case elems.length
-    when 0 then ''
-    when 1 then elems.first.to_s
-    when 2 then elems.join(" #{last_separator} ")
-    else
-      str = ''
-      elems.each_with_index do |num, index|
-        str << if index < elems.length - 1
-                 num.to_s + separator
-               else
-                 "#{last_separator} #{num}"
-               end
-      end
-      str
-    end
-  end
 end
 
 class Player < Participant
+  include Joinable
+
   def show_hand
     joinand(hand)
   end
 
   # could move some logic from Game class here
-  def stay
-  end
-
+  # def stay
+  # end
 end
 
 class Dealer < Participant
-  def show_hand
-    joinand(hand[1..-1]) + " and one unknown card."
+  def show_hand(final_hand=false)
+    if final_hand
+      joinand(hand)
+    else
+      hand[1..-1].join(', ') + " and one unknown card."
+    end
   end
-
-  def stay
-  end
+  # def stay
+  # end
 end
 
 class Deck
+  SUITS = [:hearts, :diamonds, :clubs, :spades]
+  VALUES = %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace)
+
   attr_accessor :cards
 
   # change to using Card class to represent each individual card
   def initialize
-    @cards = {
-      hearts: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
-      diamonds: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
-      clubs: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
-      spades: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace)
-    }
+    @cards = get_cards
+  end
+
+  def get_cards
+    card_set = Hash.new { |h, k| h[k] = [] }
+    SUITS.each do |suit|
+      VALUES.each do |value|
+        card_set[suit] << Card.new(suit, value)
+      end
+    end
+    card_set
   end
 
   def deal
@@ -149,22 +163,33 @@ class Deck
     card = cards[suit].sample
     card_index = cards[suit].index(card)
     cards[suit].delete_at(card_index)
-    "#{card} of #{suit.to_s.capitalize}"
+    card
   end
 
   def reset
-    self.cards = {
-      hearts: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
-      diamonds: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
-      clubs: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace),
-      spades: %w(2 3 4 5 6 7 8 9 10 Jack Queen King Ace)
-    }
+    self.cards = get_cards
   end
 end
 
 # implement in the future
 class Card
-  def initialize
+  attr_reader :suit, :value
+
+  def initialize(suit, value)
+    @suit = suit
+    @value = value
+  end
+
+  def convert_to_integer
+    if value.match(/(Jack|Queen|King)/)
+      10
+    else
+      value.to_i
+    end
+  end
+
+  def to_s
+    "#{value} of #{suit.capitalize}"
   end
 end
 
@@ -200,6 +225,7 @@ class Game
         puts "Invalid entry. Only input hit or stay."
       end
       player.hit(deck) if play == 'hit'
+      puts "Player has: #{player.show_hand}"
     end
     puts "Player stays." unless player.busted?
   end
@@ -208,11 +234,16 @@ class Game
     until dealer.total > 15 || player.busted?
       puts "Dealer hits..."
       dealer.hit(deck)
+      puts "Dealer has: #{dealer.show_hand}"
     end
     puts "Dealer stays." unless dealer.busted?
   end
 
   def show_result
+    puts "Final hands"
+    puts "Player had: #{player.show_hand}"
+    puts "Dealer had: #{dealer.show_hand(final_hand=true)}" 
+
     if player.busted?
       puts "Sorry, you busted. Dealer wins."
     elsif dealer.busted?
